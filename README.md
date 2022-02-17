@@ -1,5 +1,8 @@
 # Vanguard Control Script
 
+Disables Vanguard by default. If it is enabled at startup, gives you 120 seconds top stop it from deactivating vanguard.
+You can then enable Vanguard for a single boot (see below).
+
 ## Requirements
 
 * Windows 10
@@ -7,16 +10,20 @@
 
 ## Installation
 
-* Put somewhere on your PATH.
-* Create a scheduled task (you can import the XML file, adapt settings and paths to your setup)
+* Create a scheduled task (you can import [this XML file](VanguardControlAtStartup.xml), adapt settings and paths to your setup)
   * Trigger: run at user logon
   * Permissions: System/Admin
   * Actions: run `powershell C:\Path\To\vanguard-control.ps1 -Mode AfterStartup`
+* Create a desktop shortcut to powershell and check "Run as Administrator". Edit the shortcut so that it has this command:
+  `powershell C:\Path\To\vanguard-control.ps1`
+  ![desktop shortcut](desktop-shortcut.png)
 
 ## Usage
 
-Disables Vanguard by default. If it is enabled at startup, gives you 120 seconds top stop it from deactivating vanguard.
-To enable it (for one boot):
-* open a powershell prompt with administrator privileges (Ctrl+Shift+Enter in the Start Menu)
-* run `vanguard-control`
-* your machine will reboot in 10 seconds. After the next boot, vanguard will be enabled. For the boots after that it'll be disabled again.
+If you want to play Valorant:
+* save all open files!
+* double-click your desktop icon
+* your PC will reboot in 10 seconds.
+* After the reboot, vanguard will be enabled.
+* For the boots after that it'll be disabled again.
+
