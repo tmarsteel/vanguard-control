@@ -1,7 +1,7 @@
 # Vanguard Control Script
 
-Disables Vanguard by default. If it is enabled at startup, gives you 120 seconds top stop it from deactivating vanguard.
-You can then enable Vanguard for a single boot (see below).
+Disables Vanguard by default. If it is enabled at startup, gives you 120 seconds (configurable)
+top stop it from deactivating vanguard. You can then enable Vanguard for a single boot (see below).
 
 ## Requirements
 
@@ -27,3 +27,11 @@ If you want to play Valorant:
 * After the reboot, vanguard will be enabled.
 * For the boots after that it'll be disabled again.
 
+## Parameters
+
+|Name              |Default             |Description                           |
+|------------------|--------------------|--------------------------------------|
+|Mode              |`RebootWithVanguard`|`RebootWithVanguard` or `AfterStartup`|
+|AllowFile         |`ALLOW VANGUARD`    |Name of the file, relative to the script, whichs presence allows vanguard to keep running.|
+|StopDelay         |120                 |In AfterStartup mode: number of seconds after logon to wait until stopping/killing vanguard.|
+|VgTrayStartTimeout|45                  |In Afterstartup mode: number of seconds after logon to wait for vgtray.exe to start, so it can be stopped. Increase this if your PC is slow and vgtray.exe keeps running.|

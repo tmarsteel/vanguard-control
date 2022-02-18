@@ -6,13 +6,30 @@ Param(
     [ValidateSet("AfterStartup", "RebootWithVanguard")]
     $Mode = "RebootWithVanguard",
 
-    [parameter(ParameterSetName="Allowfile")]
     [String]
     [ValidateNotNullOrEmpty()]
-    $AllowFile = "ALLOW VANGUARD"
+    $AllowFile = "ALLOW VANGUARD",
+
+    [int]
+    $StopDelay = 120,
+
+    [int]
+    $VgTrayStartTimeout = 45
 )
 
 $AbsAllowFile = "$($PSScriptRoot)\$AllowFile"
+
+function Assure-Service-Enabled {
+    param([parameter(Position=0)] [String] [ValidateNotNullorEmpty()] $Name)
+
+    sc.exe config $Name "start=" "system" # ps' Set-Service can't do this
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Failed to activate the vanguard service $Name"
+        Write-Host "Press enter to close the window"
+        Read-Host
+        exit 1
+    }
+}
 
 if ($Mode -eq "AfterStartup") {
     if (Test-Path -Path $AbsAllowFile -PathType Leaf) {
@@ -20,31 +37,55 @@ if ($Mode -eq "AfterStartup") {
         Exit
     }
 
-    $vgkService = Get-Service -Name vgk
+    $stopWatch = [system.diagnostics.stopwatch]::StartNew()
 
-    if ($vgkService.StartType -ne "Disabled") {
-        Write-Host "Stopping Vanguard in 120 seconds. Interrupt with Ctrl+C."
-        Start-Sleep -Seconds 120
+    $vgkService = Get-Service -Name "vgk"
+    $vgcService = Get-Service -Name "vgc"
+
+    if (($vgkService.StartType -ne "Disabled") -or ($vgcService.StartType -ne "Disabled")) {
+        if ($StopDelay -gt 0) {
+            Write-Host "Stopping Vanguard in $StopDelay seconds. Interrupt with Ctrl+C."
+            Start-Sleep -Seconds $StopDelay
+        }
+
         Set-Service -Name vgk -StartupType Disabled
+        Set-Service -Name vgc -StartupType Disabled
+
         if ($vgkService.Status -ne "Stopped") {
             $vgkService.Stop()
         }
+        if ($vgcService.Status -ne "Stopped") {
+            $vgcService.Stop()
+        }
+
+
         $vgkService.WaitForStatus("Stopped", (New-TimeSpan -Seconds 10))
-    } else {
-        Write-Host "Vanguard is disabled. Run 'sc config vgk start= system' to enable it."
+        $vgcService.WaitForStatus("Stopped", (New-TimeSpan -Seconds 10))
     }
 
-    taskkill /IM vgtray.exe
+    $SecondsRemaining = [Math]::Ceiling($VgTrayStartTimeout - ($stopWatch.ElapsedMilliseconds / 1000))
+    Write-Host "Waiting up to $SecondsRemaining seconds for vgtray to start, so it can be stopped."
+    while ($stopWatch.ElapsedMilliseconds -le $VgTrayStartTimeout * 1000) {
+        try {
+            $vgtrayProcess = Get-Process -Name "vgtray" -ErrorAction Stop
+        }
+        catch [Microsoft.PowerShell.Commands.ProcessCommandException] {
+            Start-Sleep -Seconds 5
+            continue
+        }
+
+        Write-Host "vgtray has started, stopping..."
+        Stop-Process -InputObject $vgtrayProcess
+        Wait-Process -InputObject $vgtrayProcess
+        Write-Host "vgtray stopped."
+        break
+    }
 }
 
 if ($Mode -eq "RebootWithVanguard") {
-    sc.exe config vgk "start=" "system" # ps' Set-Service can't do this
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "Failed to activate the vanguard service vgk."
-        Write-Host "Press enter to close the window"
-        Read-Host
-        exit 1
-    }
+    Assure-Service-Enabled "vgk"
+    Assure-Service-Enabled "vgc"
+
     echo $null >> $AbsAllowFile
     Write-Host "Rebooting in 5 Seconds. Interrupt with Ctrl+C."
     Start-Sleep -Seconds 5
