@@ -19,18 +19,6 @@ Param(
 
 $AbsAllowFile = "$($PSScriptRoot)\$AllowFile"
 
-function Assure-Service-Enabled {
-    param([parameter(Position=0)] [String] [ValidateNotNullorEmpty()] $Name)
-
-    sc.exe config $Name "start=" "system" # ps' Set-Service can't do this
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "Failed to activate the vanguard service $Name"
-        Write-Host "Press enter to close the window"
-        Read-Host
-        exit 1
-    }
-}
-
 if ($Mode -eq "AfterStartup") {
     if (Test-Path -Path $AbsAllowFile -PathType Leaf) {
         Remove-Item -Path $AbsAllowFile
@@ -83,8 +71,21 @@ if ($Mode -eq "AfterStartup") {
 }
 
 if ($Mode -eq "RebootWithVanguard") {
-    Assure-Service-Enabled "vgk"
-    Assure-Service-Enabled "vgc"
+    sc.exe config vgk "start=" system # ps' Set-Service can't do this
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Failed to activate the vanguard service vgk"
+        Write-Host "Press enter to close the window"
+        Read-Host
+        exit 1
+    }
+
+   sc.exe config vgc "start=" auto # system is not valid for vgc
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Failed to activate the vanguard service vgc"
+        Write-Host "Press enter to close the window"
+        Read-Host
+        exit 1
+    }
 
     echo $null >> $AbsAllowFile
     Write-Host "Rebooting in 5 Seconds. Interrupt with Ctrl+C."
