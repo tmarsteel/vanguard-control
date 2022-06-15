@@ -17,6 +17,9 @@ top stop it from deactivating vanguard. You can then enable Vanguard for a singl
 * Create a desktop shortcut to powershell and check "Run as Administrator". Edit the shortcut so that it has this command:
   `powershell C:\Path\To\vanguard-control.ps1`
   ![desktop shortcut](desktop-shortcut.png)
+* Open PowerShell as administrator (search powershell, select it with the keyboard and hit Ctrl+Shift+Enter)
+  * run `set-executionpolicy remotesigned`
+  * answer `A`
 
 ## Usage
 
